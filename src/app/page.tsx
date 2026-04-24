@@ -11,17 +11,26 @@ export default function Home() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [hasSearched, setHasSearched] = React.useState(false);
 
-  const handleStackChange = (selection: StackSelection) => {
+  const handleStackChange = async (selection: StackSelection) => {
     setIsLoading(true);
     setHasSearched(true);
     
-    // Simulate API delay
-    setTimeout(() => {
+    try {
+      const stacks = Object.values(selection).filter(s => s !== 'None').join(',');
+      const response = await fetch(`/api/packages?stacks=${encodeURIComponent(stacks)}`);
+      
+      if (!response.ok) throw new Error('Failed to fetch packages');
+      
+      const data = await response.json();
+      setResults(data.packages);
+    } catch (error) {
+      console.error('Search error:', error);
+      // Fallback to local data if API fails
       const stacks = Object.values(selection).filter(s => s !== 'None');
-      const recommended = getPackagesForStack(stacks);
-      setResults(recommended);
+      setResults(getPackagesForStack(stacks));
+    } finally {
       setIsLoading(false);
-    }, 800);
+    }
   };
 
   return (
